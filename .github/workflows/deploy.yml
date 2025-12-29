@@ -1,0 +1,55 @@
+name: Deploy to GitHub Pages
+
+on:
+  # Запускать при пуше в ветку main
+  push:
+    branches: ["main"]
+  
+  # Позволяет запускать вручную из вкладки Actions
+  workflow_dispatch:
+
+# Установка разрешений для GITHUB_TOKEN
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Настройка конкурентности
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js (если это Node.js проект)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies (если есть package.json)
+        run: npm ci
+      
+      - name: Build (если есть скрипт сборки)
+        run: npm run build
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Указываем папку со статическими файлами
+          # Для большинства фреймворков это 'dist', 'build', 'out' или 'public'
+          path: './dist' # Измените на вашу папку сборки
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
